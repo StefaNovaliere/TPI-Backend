@@ -1,0 +1,24 @@
+server:
+  port: 8082
+
+spring:
+  application:
+    name: tpi-market
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          jwk-set-uri: ${KEYCLOAK_JWKS:http://localhost:8090/realms/tpi/protocol/openid-connect/certs}
+
+# Configuración del mercado.
+market:
+  # API externa para cotizaciones (Stooq, CSV, sin API key).
+  external-url: https://stooq.com/q/l/?s={symbol}.us&f=sd2t2ohlcv&h&e=csv
+  # Tipo de cambio paramétrico USD -> ARS para la conversión de monedas.
+  usd-ars-rate: 1180.0
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
