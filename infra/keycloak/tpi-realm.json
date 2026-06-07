@@ -1,0 +1,64 @@
+{
+  "realm": "tpi",
+  "enabled": true,
+  "accessTokenLifespan": 3600,
+  "sslRequired": "none",
+  "registrationAllowed": false,
+  "roles": {
+    "realm": [
+      { "name": "USER", "description": "Usuario que puede operar en el mercado" },
+      { "name": "ADMIN", "description": "Administrador que puede ver todas las transacciones" }
+    ]
+  },
+  "clients": [
+    {
+      "clientId": "tpi-client",
+      "enabled": true,
+      "publicClient": true,
+      "standardFlowEnabled": true,
+      "directAccessGrantsEnabled": true,
+      "redirectUris": ["*"],
+      "webOrigins": ["*"],
+      "protocol": "openid-connect",
+      "fullScopeAllowed": true
+    }
+  ],
+  "users": [
+    {
+      "username": "admin",
+      "enabled": true,
+      "email": "admin@tpi.com",
+      "emailVerified": true,
+      "firstName": "Admin",
+      "lastName": "TPI",
+      "credentials": [
+        { "type": "password", "value": "admin", "temporary": false }
+      ],
+      "realmRoles": ["ADMIN", "USER"]
+    },
+    {
+      "username": "ana",
+      "enabled": true,
+      "email": "ana@tpi.com",
+      "emailVerified": true,
+      "firstName": "Ana",
+      "lastName": "Gomez",
+      "credentials": [
+        { "type": "password", "value": "ana", "temporary": false }
+      ],
+      "realmRoles": ["USER"]
+    },
+    {
+      "username": "bruno",
+      "enabled": true,
+      "email": "bruno@tpi.com",
+      "emailVerified": true,
+      "firstName": "Bruno",
+      "lastName": "Diaz",
+      "credentials": [
+        { "type": "password", "value": "bruno", "temporary": false }
+      ],
+      "realmRoles": ["USER"]
+    }
+  ]
+}

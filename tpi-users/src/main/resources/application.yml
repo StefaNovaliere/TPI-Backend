@@ -1,0 +1,32 @@
+server:
+  port: 8081
+
+spring:
+  application:
+    name: tpi-users
+  datasource:
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/tpi_users}
+    username: ${SPRING_DATASOURCE_USERNAME:tpi}
+    password: ${SPRING_DATASOURCE_PASSWORD:tpi}
+  jpa:
+    hibernate:
+      ddl-auto: update
+    defer-datasource-initialization: true
+    properties:
+      hibernate:
+        format_sql: true
+  sql:
+    init:
+      mode: always
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          # Validamos la firma del token contra el JWKS de Keycloak (clave pública).
+          jwk-set-uri: ${KEYCLOAK_JWKS:http://localhost:8090/realms/tpi/protocol/openid-connect/certs}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info

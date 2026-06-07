@@ -1,0 +1,136 @@
+services:
+  # ----------------------------------------------------------------------------
+  # Base de datos: un único Postgres con una base de datos por microservicio.
+  # (La consigna permite una BD por microservicio o una sola para todo.)
+  # ----------------------------------------------------------------------------
+  postgres:
+    image: postgres:16-alpine
+    container_name: tpi-postgres
+    environment:
+      POSTGRES_USER: tpi
+      POSTGRES_PASSWORD: tpi
+      POSTGRES_DB: tpi
+    ports:
+      - "5432:5432"
+    volumes:
+      - ./infra/postgres/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+      - tpi-pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U tpi"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  # ----------------------------------------------------------------------------
+  # Identity Provider: Keycloak (OAuth2). Importa el realm "tpi" al arrancar.
+  # Expuesto en el host por 8090 para no chocar con el gateway (8080).
+  # ----------------------------------------------------------------------------
+  keycloak:
+    image: quay.io/keycloak/keycloak:24.0
+    container_name: tpi-keycloak
+    command: ["start-dev", "--import-realm"]
+    environment:
+      KEYCLOAK_ADMIN: admin
+      KEYCLOAK_ADMIN_PASSWORD: admin
+      KC_HOSTNAME_STRICT: "false"
+      KC_HTTP_ENABLED: "true"
+    ports:
+      - "8090:8080"
+    volumes:
+      - ./infra/keycloak/tpi-realm.json:/opt/keycloak/data/import/tpi-realm.json:ro
+    healthcheck:
+      test: ["CMD-SHELL", "exec 3<>/dev/tcp/127.0.0.1/8080 && echo -e 'GET /realms/tpi HTTP/1.1\\r\\nHost: localhost\\r\\nConnection: close\\r\\n\\r\\n' >&3 && cat <&3 | grep -q '200 OK'"]
+      interval: 10s
+      timeout: 5s
+      retries: 20
+      start_period: 30s
+
+  # ----------------------------------------------------------------------------
+  # API Gateway: único punto de entrada al backend (puerto 8080).
+  # ----------------------------------------------------------------------------
+  tpi-gateway:
+    build: ./tpi-gateway
+    container_name: tpi-gateway
+    ports:
+      - "8080:8080"
+    environment:
+      USERS_URI: http://tpi-users:8081
+      MARKET_URI: http://tpi-market:8082
+      ORDERS_URI: http://tpi-orders:8083
+      HISTORY_URI: http://tpi-history:8084
+    depends_on:
+      - tpi-users
+      - tpi-market
+      - tpi-orders
+      - tpi-history
+
+  # ----------------------------------------------------------------------------
+  # Microservicio Usuarios: usuarios, cuentas, portfolios, settlement.
+  # ----------------------------------------------------------------------------
+  tpi-users:
+    build: ./tpi-users
+    container_name: tpi-users
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/tpi_users
+      SPRING_DATASOURCE_USERNAME: tpi
+      SPRING_DATASOURCE_PASSWORD: tpi
+      KEYCLOAK_JWKS: http://keycloak:8080/realms/tpi/protocol/openid-connect/certs
+    depends_on:
+      postgres:
+        condition: service_healthy
+      keycloak:
+        condition: service_started
+
+  # ----------------------------------------------------------------------------
+  # Microservicio Cotizaciones (Market): consume una API externa. Público.
+  # ----------------------------------------------------------------------------
+  tpi-market:
+    build: ./tpi-market
+    container_name: tpi-market
+    environment:
+      KEYCLOAK_JWKS: http://keycloak:8080/realms/tpi/protocol/openid-connect/certs
+    depends_on:
+      keycloak:
+        condition: service_started
+
+  # ----------------------------------------------------------------------------
+  # Microservicio Órdenes: compra, venta y motor de emparejamiento.
+  # ----------------------------------------------------------------------------
+  tpi-orders:
+    build: ./tpi-orders
+    container_name: tpi-orders
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/tpi_orders
+      SPRING_DATASOURCE_USERNAME: tpi
+      SPRING_DATASOURCE_PASSWORD: tpi
+      KEYCLOAK_JWKS: http://keycloak:8080/realms/tpi/protocol/openid-connect/certs
+      USERS_URI: http://tpi-users:8081
+      MARKET_URI: http://tpi-market:8082
+      HISTORY_URI: http://tpi-history:8084
+    depends_on:
+      postgres:
+        condition: service_healthy
+      keycloak:
+        condition: service_started
+      tpi-users:
+        condition: service_started
+
+  # ----------------------------------------------------------------------------
+  # Microservicio Historial: registro de operaciones y transacciones.
+  # ----------------------------------------------------------------------------
+  tpi-history:
+    build: ./tpi-history
+    container_name: tpi-history
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/tpi_history
+      SPRING_DATASOURCE_USERNAME: tpi
+      SPRING_DATASOURCE_PASSWORD: tpi
+      KEYCLOAK_JWKS: http://keycloak:8080/realms/tpi/protocol/openid-connect/certs
+    depends_on:
+      postgres:
+        condition: service_healthy
+      keycloak:
+        condition: service_started
+
+volumes:
+  tpi-pgdata:

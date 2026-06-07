@@ -1,0 +1,215 @@
+{
+  "info": {
+    "name": "TPI Backend - Mercado Bursátil",
+    "description": "Colección para probar el backend de microservicios. Todas las peticiones pasan por el API Gateway (http://localhost:8080). Use primero 'Auth - Login' para obtener el token; se guarda automáticamente en la variable {{token}}.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "gateway", "value": "http://localhost:8080" },
+    { "key": "keycloak", "value": "http://localhost:8090" },
+    { "key": "token", "value": "" }
+  ],
+  "item": [
+    {
+      "name": "Auth - Login (ana)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "var json = pm.response.json();",
+              "pm.collectionVariables.set('token', json.access_token);",
+              "pm.test('token obtenido', function () { pm.expect(json.access_token).to.be.a('string'); });"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/x-www-form-urlencoded" }
+        ],
+        "body": {
+          "mode": "urlencoded",
+          "urlencoded": [
+            { "key": "grant_type", "value": "password" },
+            { "key": "client_id", "value": "tpi-client" },
+            { "key": "username", "value": "ana" },
+            { "key": "password", "value": "ana" }
+          ]
+        },
+        "url": {
+          "raw": "{{keycloak}}/realms/tpi/protocol/openid-connect/token",
+          "host": ["{{keycloak}}"],
+          "path": ["realms", "tpi", "protocol", "openid-connect", "token"]
+        }
+      }
+    },
+    {
+      "name": "Auth - Login (admin)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "var json = pm.response.json();",
+              "pm.collectionVariables.set('token', json.access_token);"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/x-www-form-urlencoded" }
+        ],
+        "body": {
+          "mode": "urlencoded",
+          "urlencoded": [
+            { "key": "grant_type", "value": "password" },
+            { "key": "client_id", "value": "tpi-client" },
+            { "key": "username", "value": "admin" },
+            { "key": "password", "value": "admin" }
+          ]
+        },
+        "url": {
+          "raw": "{{keycloak}}/realms/tpi/protocol/openid-connect/token",
+          "host": ["{{keycloak}}"],
+          "path": ["realms", "tpi", "protocol", "openid-connect", "token"]
+        }
+      }
+    },
+    {
+      "name": "Cotizaciones - Consultar NVDA (público)",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{gateway}}/api/v1/quotes/NVDA",
+          "host": ["{{gateway}}"],
+          "path": ["api", "v1", "quotes", "NVDA"]
+        }
+      }
+    },
+    {
+      "name": "Usuarios - Ingresar dinero (ana)",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{token}}" },
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": { "mode": "raw", "raw": "{\n  \"amount\": 1000000\n}" },
+        "url": {
+          "raw": "{{gateway}}/api/v1/users/2/deposit",
+          "host": ["{{gateway}}"],
+          "path": ["api", "v1", "users", "2", "deposit"]
+        }
+      }
+    },
+    {
+      "name": "Usuarios - Portfolio y saldo (ana)",
+      "request": {
+        "method": "GET",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{token}}" }
+        ],
+        "url": {
+          "raw": "{{gateway}}/api/v1/users/2/portfolio",
+          "host": ["{{gateway}}"],
+          "path": ["api", "v1", "users", "2", "portfolio"]
+        }
+      }
+    },
+    {
+      "name": "Usuarios - Mi info (me)",
+      "request": {
+        "method": "GET",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{token}}" }
+        ],
+        "url": {
+          "raw": "{{gateway}}/api/v1/users/me",
+          "host": ["{{gateway}}"],
+          "path": ["api", "v1", "users", "me"]
+        }
+      }
+    },
+    {
+      "name": "Ordenes - Crear orden de venta (bruno vende NVDA)",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{token}}" },
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": { "mode": "raw", "raw": "{\n  \"usuarioId\": 3,\n  \"simbolo\": \"NVDA\",\n  \"cantidad\": 20,\n  \"precioMinArs\": 144000\n}" },
+        "url": {
+          "raw": "{{gateway}}/api/v1/orders/sell",
+          "host": ["{{gateway}}"],
+          "path": ["api", "v1", "orders", "sell"]
+        }
+      }
+    },
+    {
+      "name": "Ordenes - Crear orden de COMPRA (ana compra NVDA) [emparejamiento]",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{token}}" },
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": { "mode": "raw", "raw": "{\n  \"usuarioId\": 2,\n  \"simbolo\": \"NVDA\",\n  \"cantidad\": 40,\n  \"precioMaxArs\": 150000\n}" },
+        "url": {
+          "raw": "{{gateway}}/api/v1/orders/buy",
+          "host": ["{{gateway}}"],
+          "path": ["api", "v1", "orders", "buy"]
+        }
+      }
+    },
+    {
+      "name": "Ordenes - Compras de un usuario (ana)",
+      "request": {
+        "method": "GET",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{token}}" }
+        ],
+        "url": {
+          "raw": "{{gateway}}/api/v1/orders/buy/user/2",
+          "host": ["{{gateway}}"],
+          "path": ["api", "v1", "orders", "buy", "user", "2"]
+        }
+      }
+    },
+    {
+      "name": "Historial - De un usuario (ana)",
+      "request": {
+        "method": "GET",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{token}}" }
+        ],
+        "url": {
+          "raw": "{{gateway}}/api/v1/history/users/2",
+          "host": ["{{gateway}}"],
+          "path": ["api", "v1", "history", "users", "2"]
+        }
+      }
+    },
+    {
+      "name": "Historial - Todas las transacciones (requiere ADMIN)",
+      "request": {
+        "method": "GET",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{token}}" }
+        ],
+        "url": {
+          "raw": "{{gateway}}/api/v1/history/transactions",
+          "host": ["{{gateway}}"],
+          "path": ["api", "v1", "history", "transactions"]
+        }
+      }
+    }
+  ]
+}

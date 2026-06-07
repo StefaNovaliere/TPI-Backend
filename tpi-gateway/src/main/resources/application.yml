@@ -1,0 +1,33 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: tpi-gateway
+  cloud:
+    gateway:
+      # El gateway reenvía por defecto el header Authorization (Bearer token)
+      # hacia los microservicios, que son quienes validan el JWT.
+      routes:
+        - id: users
+          uri: ${USERS_URI:http://localhost:8081}
+          predicates:
+            - Path=/api/v1/users/**
+        - id: market
+          uri: ${MARKET_URI:http://localhost:8082}
+          predicates:
+            - Path=/api/v1/quotes/**
+        - id: orders
+          uri: ${ORDERS_URI:http://localhost:8083}
+          predicates:
+            - Path=/api/v1/orders/**
+        - id: history
+          uri: ${HISTORY_URI:http://localhost:8084}
+          predicates:
+            - Path=/api/v1/history/**
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,gateway
