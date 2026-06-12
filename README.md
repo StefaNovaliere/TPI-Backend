@@ -7,6 +7,11 @@ cotizaciones, ingresar dinero, colocar órdenes de compra y venta, y que el sist
 Desarrollado con **Spring Boot 3**, **microservicios**, **Docker Compose**,
 **PostgreSQL** y **Keycloak (OAuth2)** como IDP.
 
+> 📘 **Para entender y defender el sistema en detalle (coloquio), leer
+> [`DOCUMENTACION.md`](DOCUMENTACION.md)**: explica cada decisión de diseño, por
+> qué cada microservicio, el motor de emparejamiento paso a paso, las
+> transacciones, la seguridad y un glosario con preguntas frecuentes.
+
 ---
 
 ## 1. Arquitectura
