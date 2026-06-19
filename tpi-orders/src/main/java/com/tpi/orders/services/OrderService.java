@@ -171,4 +171,9 @@ public class OrderService {
     public List<OrdenVenta> ventasDeUsuario(Long usuarioId) {
         return ventaRepository.findByUsuarioIdOrderByFechaCreacionDesc(usuarioId);
     }
+
+    @Transactional(readOnly = true)
+    public List<OrdenVenta> listarTodoElMercado() {
+        return ventaRepository.findByEstadoOrderByPrecioMinArsAsc(EstadoOrden.ABIERTA);
+    }
 }

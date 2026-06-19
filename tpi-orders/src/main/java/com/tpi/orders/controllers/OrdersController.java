@@ -45,4 +45,10 @@ public class OrdersController {
     public List<OrdenVenta> ventasDeUsuario(@PathVariable Long usuarioId) {
         return orderService.ventasDeUsuario(usuarioId);
     }
+
+    /** Ver todas las acciones a la venta en el mercado (Libro de Órdenes). */
+    @GetMapping("/sell/all")
+    public List<OrdenVenta> verMercado() {
+        return orderService.listarTodoElMercado();
+    }
 }

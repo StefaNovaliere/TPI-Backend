@@ -19,4 +19,6 @@ public interface OrdenVentaRepository extends JpaRepository<OrdenVenta, Long> {
      */
     List<OrdenVenta> findBySimboloAndEstadoAndPrecioMinArsLessThanEqualOrderByPrecioMinArsAscFechaCreacionAsc(
             String simbolo, EstadoOrden estado, BigDecimal precioMaxArs);
+
+    List<OrdenVenta> findByEstadoOrderByPrecioMinArsAsc(EstadoOrden estado);
 }

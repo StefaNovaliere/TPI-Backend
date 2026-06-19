@@ -59,6 +59,21 @@
         { "type": "password", "value": "bruno", "temporary": false }
       ],
       "realmRoles": ["USER"]
+    },
+
+    {
+      "username": "carlos",
+      "enabled": true,
+      "email": "carlos@tpi.com",
+      "credentials": [{ "type": "password", "value": "carlos", "temporary": false }],
+      "realmRoles": ["USER"]
+    },
+    {
+      "username": "diana",
+      "enabled": true,
+      "email": "diana@tpi.com",
+      "credentials": [{ "type": "password", "value": "diana", "temporary": false }],
+      "realmRoles": ["USER"]
     }
   ]
 }
