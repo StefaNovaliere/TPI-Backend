@@ -74,6 +74,7 @@ public class OrderService {
         String simbolo = dto.simbolo().toUpperCase();
 
         OrdenCompra compra = new OrdenCompra();
+        compra.setEstado(EstadoOrden.ABIERTA);
         compra.setUsuarioId(dto.usuarioId());
         compra.setSimbolo(simbolo);
         compra.setCantidad(dto.cantidad());
