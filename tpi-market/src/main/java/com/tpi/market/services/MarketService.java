@@ -10,6 +10,8 @@ import org.springframework.web.client.RestClient;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.Map;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 /**
  * Obtiene cotizaciones desde una API externa (Stooq) y las convierte a ARS.
@@ -28,7 +30,8 @@ public class MarketService {
             "MSFT", new BigDecimal("430.10"),
             "GOOGL", new BigDecimal("178.20"),
             "AMZN", new BigDecimal("185.00"),
-            "TSLA", new BigDecimal("250.75")
+            "TSLA", new BigDecimal("250.75"),
+            "ABNB", new BigDecimal("145.75")
     );
 
     private final String externalUrl;
@@ -44,7 +47,7 @@ public class MarketService {
     public CotizacionDTO obtenerCotizacion(String simbolo) {
         String sym = simbolo.toUpperCase();
         BigDecimal precioUsd = consultarApiExterna(sym);
-        String fuente = "API externa (Stooq)";
+        String fuente = "API externa (Yahoo)";
 
         if (precioUsd == null) {
             precioUsd = PRECIOS_MOCK.get(sym);
@@ -61,18 +64,38 @@ public class MarketService {
     /** Consulta la API externa. Devuelve el precio en USD o null si falla. */
     private BigDecimal consultarApiExterna(String simbolo) {
         try {
+            // Yahoo prefiere minúsculas, pero el símbolo debe ser exacto (ej: aapl)
             String url = externalUrl.replace("{symbol}", simbolo.toLowerCase());
-            String csv = restClient.get().uri(url).retrieve().body(String.class);
-            if (csv == null) return null;
-            // CSV: Symbol,Date,Time,Open,High,Low,Close,Volume
-            String[] lineas = csv.strip().split("\n");
-            if (lineas.length < 2) return null;
-            String[] cols = lineas[1].split(",");
-            if (cols.length < 7 || cols[6].equalsIgnoreCase("N/D")) return null;
-            return new BigDecimal(cols[6].trim()); // columna Close
+            log.info("Consultando Yahoo Finance: {}", url);
+
+            // 1. Es VITAL el User-Agent para evitar el error 429
+            String responseBody = restClient.get()
+                    .uri(url)
+                    .header("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36")
+                    .header("Accept", "application/json")
+                    .retrieve()
+                    .body(String.class);
+
+            if (responseBody == null) return null;
+
+            // 2. Yahoo devuelve un JSON complejo. Vamos a navegarlo:
+            // Estructura: chart -> result[0] -> meta -> regularMarketPrice
+            ObjectMapper mapper = new ObjectMapper();
+            JsonNode root = mapper.readTree(responseBody);
+
+            JsonNode result = root.path("chart").path("result").get(0);
+            if (result != null && result.has("meta")) {
+                double precio = result.path("meta").path("regularMarketPrice").asDouble();
+                log.info("Precio obtenido para {}: {}", simbolo, precio);
+                return BigDecimal.valueOf(precio);
+            }
+
+            return null;
         } catch (Exception e) {
-            log.warn("No se pudo consultar la API externa para {}: {}", simbolo, e.getMessage());
+            log.warn("No se pudo consultar Yahoo Finance para {}: {}", simbolo, e.getMessage());
             return null;
         }
     }
+
+
 }

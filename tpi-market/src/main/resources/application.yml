@@ -13,7 +13,7 @@ spring:
 # Configuración del mercado.
 market:
   # API externa para cotizaciones (Stooq, CSV, sin API key).
-  external-url: https://stooq.com/q/l/?s={symbol}.us&f=sd2t2ohlcv&h&e=csv
+  external-url: https://query1.finance.yahoo.com/v8/finance/chart/{symbol}?interval=1d&range=5d
   # Tipo de cambio paramétrico USD -> ARS para la conversión de monedas.
   usd-ars-rate: 1180.0
 
